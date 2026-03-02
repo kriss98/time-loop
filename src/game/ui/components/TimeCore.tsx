@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { MouseEvent, useState } from 'react';
-import { PRIMARY_CURRENCY_LABEL, formatNumber } from '@/src/game/economy/format';
+import { PRIMARY_CURRENCY_LABEL, formatNumber, formatRate } from '@/src/game/economy/format';
 import { WorkerAction } from '@/src/game/sim/messages';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { soundManager } from '@/src/game/ui/sfx/sound';
@@ -39,7 +39,7 @@ export const TimeCore = ({ dispatch }: { dispatch: (action: WorkerAction) => voi
       <div className="mt-4 text-center">
         <div className="text-4xl font-black text-white">{formatNumber(state.chronons, state.compactNumbers)}</div>
         <div className="text-sm text-cyan-100">{PRIMARY_CURRENCY_LABEL}</div>
-        <div className="mt-2 text-xs text-slate-300">{formatNumber(chrononsPerSec, state.compactNumbers)} / sec</div>
+        <div className="mt-2 text-xs text-slate-300">{formatRate(chrononsPerSec, state.compactNumbers)} / sec</div>
       </div>
 
       <div className="relative mx-auto mt-4 w-full max-w-[360px]">
