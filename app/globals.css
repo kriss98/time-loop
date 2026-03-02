@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #020617;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
