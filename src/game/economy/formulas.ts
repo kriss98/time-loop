@@ -4,10 +4,11 @@ import { UPGRADES } from '@/src/game/content/upgrades';
 import { BuyAmountMode, GameState } from '@/src/game/sim/messages';
 
 export const CLICK_BASE = 1;
+export const PRESTIGE_REQUIREMENT = 250_000;
 
 export const getTotalCost = (baseCost: number, growth: number, owned: number, amount: number): number => {
   if (amount <= 0) return 0;
-  return baseCost * ((growth ** owned) * (growth ** amount - 1)) / (growth - 1);
+  return (baseCost * (growth ** owned) * (growth ** amount - 1)) / (growth - 1);
 };
 
 export const calculateAffordableAmount = (
@@ -35,13 +36,13 @@ export const calculateAffordableAmount = (
 
 export const resolveBuyAmount = (
   mode: BuyAmountMode,
-  availableSeconds: number,
+  availableChronons: number,
   baseCost: number,
   growth: number,
   owned: number,
 ): number => {
   if (mode === 'max') {
-    return calculateAffordableAmount(availableSeconds, baseCost, growth, owned);
+    return calculateAffordableAmount(availableChronons, baseCost, growth, owned);
   }
   return mode;
 };
@@ -87,7 +88,7 @@ export const getAutoClicksPerSecond = (state: GameState): number => {
   return regular + paradox;
 };
 
-export const getSecondsPerSecond = (state: GameState): number => {
+export const getChrononsPerSecond = (state: GameState): number => {
   const generatorMult = getGeneratorMultiplier(state);
   const globalMult = getGlobalMultiplier(state);
   const generated = GENERATORS.reduce((acc, generator) => {
@@ -98,4 +99,7 @@ export const getSecondsPerSecond = (state: GameState): number => {
   return (generated + getAutoClicksPerSecond(state) * CLICK_BASE) * generatorMult * globalMult;
 };
 
-export const getProjectedParadoxGain = (totalHours: number): number => Math.floor(totalHours ** 0.7);
+export const getProjectedParadoxGain = (totalChrononsEarned: number): number => {
+  if (totalChrononsEarned < PRESTIGE_REQUIREMENT) return 0;
+  return Math.floor((totalChrononsEarned / PRESTIGE_REQUIREMENT) ** 0.7);
+};

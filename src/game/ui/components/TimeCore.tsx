@@ -1,31 +1,30 @@
 'use client';
 
 import Image from 'next/image';
-import { MouseEvent, useMemo, useState } from 'react';
-import { formatNumber } from '@/src/game/economy/format';
+import { MouseEvent, useState } from 'react';
+import { PRIMARY_CURRENCY_LABEL, formatNumber } from '@/src/game/economy/format';
 import { WorkerAction } from '@/src/game/sim/messages';
 import { useGameStore } from '@/src/game/store/useGameStore';
+import { soundManager } from '@/src/game/ui/sfx/sound';
 
 type Floater = { id: number; x: number; y: number; text: string };
 
 export const TimeCore = ({ dispatch }: { dispatch: (action: WorkerAction) => void }) => {
-  const { state, rates } = useGameStore();
+  const { state, chrononsPerSec } = useGameStore();
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [clickFrame, setClickFrame] = useState(0);
 
-  const hasPositiveRates = rates.seconds + rates.minutes + rates.hours > 0;
-
   const onCoreClick = (event: MouseEvent<HTMLButtonElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
     const floater: Floater = {
       id: Date.now() + Math.random(),
-      x,
-      y,
-      text: `+${formatNumber(1, state.compactNumbers)} seconds`,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      text: `+1 ${PRIMARY_CURRENCY_LABEL}`,
     };
 
+    soundManager.unlock();
+    soundManager.play('click');
     dispatch({ type: 'CLICK' });
     setClickFrame((f) => f + 1);
     setFloaters((existing) => [...existing, floater]);
@@ -34,20 +33,16 @@ export const TimeCore = ({ dispatch }: { dispatch: (action: WorkerAction) => voi
     }, 820);
   };
 
-  const totals = useMemo(
-    () => [
-      { label: 'Seconds', value: state.seconds, rate: rates.seconds },
-      { label: 'Minutes', value: state.minutes, rate: rates.minutes },
-      { label: 'Hours', value: state.hours, rate: rates.hours },
-      { label: 'Paradox', value: state.paradoxPoints, rate: 0 },
-    ],
-    [rates.hours, rates.minutes, rates.seconds, state.hours, state.minutes, state.paradoxPoints, state.seconds],
-  );
-
   return (
-    <section className="game-panel p-4">
-      <h2 className="panel-title mb-2">Temporal Core</h2>
-      <div className="relative mx-auto w-full max-w-[360px]">
+    <section className="game-panel panel-glow p-6">
+      <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Temporal Core</p>
+      <div className="mt-4 text-center">
+        <div className="text-4xl font-black text-white">{formatNumber(state.chronons, state.compactNumbers)}</div>
+        <div className="text-sm text-cyan-100">{PRIMARY_CURRENCY_LABEL}</div>
+        <div className="mt-2 text-xs text-slate-300">{formatNumber(chrononsPerSec, state.compactNumbers)} / sec</div>
+      </div>
+
+      <div className="relative mx-auto mt-4 w-full max-w-[360px]">
         <button
           type="button"
           aria-label="Stabilize loop"
@@ -61,18 +56,6 @@ export const TimeCore = ({ dispatch }: { dispatch: (action: WorkerAction) => voi
           <span key={floater.id} className="floater" style={{ left: floater.x, top: floater.y }}>
             {floater.text}
           </span>
-        ))}
-      </div>
-
-      <div className="mt-4 space-y-1 text-sm">
-        {totals.map((row) => (
-          <div key={row.label} className={`currency-row ${row.rate > 0 ? 'is-active' : ''}`}>
-            <span className="font-semibold uppercase tracking-wide text-slate-300">{row.label}</span>
-            <span className={hasPositiveRates ? 'currency-pulse' : ''}>
-              {formatNumber(row.value, state.compactNumbers)}
-              {row.rate > 0 ? ` (${formatNumber(row.rate, state.compactNumbers)}/s)` : ''}
-            </span>
-          </div>
         ))}
       </div>
     </section>

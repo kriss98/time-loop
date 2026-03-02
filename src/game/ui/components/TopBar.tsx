@@ -11,7 +11,7 @@ export const TopBar = ({ dispatch }: { dispatch: (a: WorkerAction) => void }) =>
     <header className="game-panel mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
       <div>
         <h1 className="text-3xl font-black tracking-tight text-cyan-100">Time Loop Architect</h1>
-        <p className="text-sm text-slate-200">Bend causality, optimize cycles, and harvest paradox.</p>
+        <p className="text-sm text-slate-200">Spin one currency. Bend one timeline. Collapse for paradox.</p>
       </div>
       <div className="flex flex-wrap justify-end gap-2 text-sm">
         <button
@@ -19,29 +19,6 @@ export const TopBar = ({ dispatch }: { dispatch: (a: WorkerAction) => void }) =>
           onClick={() => dispatch({ type: 'TOGGLE_COMPACT_NUMBERS', payload: { enabled: !state.compactNumbers } })}
         >
           Numbers: {state.compactNumbers ? 'Compact' : 'Full'}
-        </button>
-
-        <button
-          className="game-chip"
-          onClick={() =>
-            dispatch({
-              type: 'TOGGLE_AUTOCONVERT',
-              payload: { currency: 'minutes', enabled: !state.autoConvertSecondsToMinutes },
-            })
-          }
-        >
-          Auto s→m: {state.autoConvertSecondsToMinutes ? 'On' : 'Off'}
-        </button>
-        <button
-          className="game-chip"
-          onClick={() =>
-            dispatch({
-              type: 'TOGGLE_AUTOCONVERT',
-              payload: { currency: 'hours', enabled: !state.autoConvertMinutesToHours },
-            })
-          }
-        >
-          Auto m→h: {state.autoConvertMinutesToHours ? 'On' : 'Off'}
         </button>
         <button className="game-chip" onClick={() => void saveState(state)}>
           Save

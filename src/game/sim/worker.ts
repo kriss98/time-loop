@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { getProjectedParadoxGain, getSecondsPerSecond } from '@/src/game/economy/formulas';
+import { getChrononsPerSecond, getProjectedParadoxGain } from '@/src/game/economy/formulas';
 import { migrateSave } from '@/src/game/persistence/migrate';
 import { reduceAction, createInitialState } from '@/src/game/sim/reducer';
 import { applyTick } from '@/src/game/sim/simCore';
@@ -11,12 +11,14 @@ let lastTime = performance.now();
 let snapAccumulator = 0;
 
 const postSnapshot = (): void => {
+  const chrononsPerSec = getChrononsPerSecond(state);
   const message: WorkerOutboundMessage = {
     type: 'SNAPSHOT',
     payload: {
       state,
-      rates: { seconds: getSecondsPerSecond(state), minutes: 0, hours: 0 },
-      projectedParadoxGain: getProjectedParadoxGain(state.totalHours),
+      rates: { chronons: chrononsPerSec },
+      chrononsPerSec,
+      projectedParadoxGain: getProjectedParadoxGain(state.totalChrononsEarned),
     },
   };
   self.postMessage(message);

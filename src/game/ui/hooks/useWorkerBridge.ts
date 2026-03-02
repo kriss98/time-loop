@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { loadState, saveState } from '@/src/game/persistence/saveLoad';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { WorkerAction, WorkerOutboundMessage } from '@/src/game/sim/messages';
+import { soundManager } from '@/src/game/ui/sfx/sound';
 
 export const useWorkerBridge = () => {
   const workerRef = useRef<Worker | null>(null);
@@ -29,6 +30,10 @@ export const useWorkerBridge = () => {
 
     return () => worker.terminate();
   }, [setSnapshot]);
+
+  useEffect(() => {
+    soundManager.configure(state.audio.sfxEnabled, state.audio.sfxVolume);
+  }, [state.audio.sfxEnabled, state.audio.sfxVolume]);
 
   useEffect(() => {
     const timer = setInterval(() => {

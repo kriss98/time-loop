@@ -1,5 +1,10 @@
-export type CurrencyId = 'seconds' | 'minutes' | 'hours';
+export type CurrencyId = 'chronons';
 export type BuyAmountMode = 1 | 10 | 'max';
+
+export interface AudioSettings {
+  sfxEnabled: boolean;
+  sfxVolume: number;
+}
 
 export interface GeneratorDef {
   id: string;
@@ -16,13 +21,7 @@ export interface UpgradeDef {
   description: string;
   cost: number;
   currency: CurrencyId;
-  type:
-    | 'globalMultiplier'
-    | 'generatorMultiplier'
-    | 'unlockMinutes'
-    | 'unlockHours'
-    | 'autoClick'
-    | 'costCompression';
+  type: 'globalMultiplier' | 'generatorMultiplier' | 'autoClick' | 'costCompression';
   value: number;
   iconPath?: string;
 }
@@ -38,20 +37,15 @@ export interface ParadoxUpgradeDef {
 
 export interface GameState {
   version: number;
-  seconds: number;
-  minutes: number;
-  hours: number;
-  totalHours: number;
+  chronons: number;
+  totalChrononsEarned: number;
   paradoxPoints: number;
   generators: Record<string, number>;
   purchasedUpgrades: string[];
   purchasedParadoxUpgrades: string[];
-  autoConvertSecondsToMinutes: boolean;
-  autoConvertMinutesToHours: boolean;
   compactNumbers: boolean;
   buyMode: BuyAmountMode;
-  unlockedMinutes: boolean;
-  unlockedHours: boolean;
+  audio: AudioSettings;
   lastTickAt: number;
   lastSavedAt: number;
   log: string[];
@@ -62,19 +56,24 @@ export type WorkerAction =
   | { type: 'BUY_GENERATOR'; payload: { id: string; amountMode: BuyAmountMode } }
   | { type: 'BUY_UPGRADE'; payload: { id: string } }
   | { type: 'BUY_PARADOX_UPGRADE'; payload: { id: string } }
-  | {
-      type: 'TOGGLE_AUTOCONVERT';
-      payload: { currency: 'minutes' | 'hours'; enabled: boolean };
-    }
   | { type: 'SET_BUY_MODE'; payload: { mode: BuyAmountMode } }
   | { type: 'TOGGLE_COMPACT_NUMBERS'; payload: { enabled: boolean } }
+  | { type: 'SET_AUDIO_SETTINGS'; payload: AudioSettings }
   | { type: 'PRESTIGE' }
   | { type: 'IMPORT_STATE'; payload: { state: GameState } }
   | { type: 'HARD_RESET' }
   | { type: 'REQUEST_SNAPSHOT' };
 
 export type WorkerOutboundMessage =
-  | { type: 'SNAPSHOT'; payload: { state: GameState; rates: Record<CurrencyId, number>; projectedParadoxGain: number } }
+  | {
+      type: 'SNAPSHOT';
+      payload: {
+        state: GameState;
+        rates: Record<CurrencyId, number>;
+        projectedParadoxGain: number;
+        chrononsPerSec: number;
+      };
+    }
   | { type: 'SAVED'; payload: { savedAt: number } };
 
 export interface PersistedSave {

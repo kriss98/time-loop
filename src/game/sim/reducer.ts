@@ -2,6 +2,7 @@ import { GENERATORS } from '@/src/game/content/generators';
 import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
 import {
+  PRESTIGE_REQUIREMENT,
   getCostCompression,
   getProjectedParadoxGain,
   getTotalCost,
@@ -11,24 +12,19 @@ import { applyTick } from '@/src/game/sim/simCore';
 import { runPrestige } from '@/src/game/sim/prestige';
 import { GameState, WorkerAction } from '@/src/game/sim/messages';
 
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 
 export const createInitialState = (): GameState => ({
   version: STATE_VERSION,
-  seconds: 0,
-  minutes: 0,
-  hours: 0,
-  totalHours: 0,
+  chronons: 0,
+  totalChrononsEarned: 0,
   paradoxPoints: 0,
   generators: Object.fromEntries(GENERATORS.map((g) => [g.id, 0])),
   purchasedUpgrades: [],
   purchasedParadoxUpgrades: [],
-  autoConvertSecondsToMinutes: true,
-  autoConvertMinutesToHours: true,
   compactNumbers: false,
   buyMode: 1,
-  unlockedMinutes: false,
-  unlockedHours: false,
+  audio: { sfxEnabled: true, sfxVolume: 65 },
   lastTickAt: Date.now(),
   lastSavedAt: Date.now(),
   log: ['Initialized loop architecture'],
@@ -40,7 +36,8 @@ const pushLog = (state: GameState, msg: string): void => {
 
 export const reduceAction = (state: GameState, action: WorkerAction): GameState => {
   if (action.type === 'CLICK') {
-    state.seconds += 1;
+    state.chronons += 1;
+    state.totalChrononsEarned += 1;
     return state;
   }
 
@@ -54,9 +51,8 @@ export const reduceAction = (state: GameState, action: WorkerAction): GameState 
     return state;
   }
 
-  if (action.type === 'TOGGLE_AUTOCONVERT') {
-    if (action.payload.currency === 'minutes') state.autoConvertSecondsToMinutes = action.payload.enabled;
-    if (action.payload.currency === 'hours') state.autoConvertMinutesToHours = action.payload.enabled;
+  if (action.type === 'SET_AUDIO_SETTINGS') {
+    state.audio = action.payload;
     return state;
   }
 
@@ -65,13 +61,13 @@ export const reduceAction = (state: GameState, action: WorkerAction): GameState 
     if (!generator) return state;
     const owned = state.generators[generator.id] ?? 0;
     const growth = Math.max(1.05, generator.growth - getCostCompression(state));
-    const amount = resolveBuyAmount(action.payload.amountMode, state.seconds, generator.baseCost, growth, owned);
+    const amount = resolveBuyAmount(action.payload.amountMode, state.chronons, generator.baseCost, growth, owned);
     if (amount <= 0) return state;
 
     const totalCost = getTotalCost(generator.baseCost, growth, owned, amount);
-    if (state.seconds < totalCost) return state;
+    if (state.chronons < totalCost) return state;
 
-    state.seconds -= totalCost;
+    state.chronons -= totalCost;
     state.generators[generator.id] = owned + amount;
     pushLog(state, `Bought ${generator.name} x${amount}`);
     return state;
@@ -80,11 +76,9 @@ export const reduceAction = (state: GameState, action: WorkerAction): GameState 
   if (action.type === 'BUY_UPGRADE') {
     const upgrade = UPGRADES.find((u) => u.id === action.payload.id);
     if (!upgrade || state.purchasedUpgrades.includes(upgrade.id)) return state;
-    if (state[upgrade.currency] < upgrade.cost) return state;
-    state[upgrade.currency] -= upgrade.cost;
+    if (state.chronons < upgrade.cost) return state;
+    state.chronons -= upgrade.cost;
     state.purchasedUpgrades.push(upgrade.id);
-    if (upgrade.type === 'unlockMinutes') state.unlockedMinutes = true;
-    if (upgrade.type === 'unlockHours') state.unlockedHours = true;
     pushLog(state, `Purchased upgrade: ${upgrade.name}`);
     return state;
   }
@@ -100,8 +94,8 @@ export const reduceAction = (state: GameState, action: WorkerAction): GameState 
   }
 
   if (action.type === 'PRESTIGE') {
-    if (state.totalHours < 3) return state;
-    return runPrestige(state, getProjectedParadoxGain(state.totalHours));
+    if (state.totalChrononsEarned < PRESTIGE_REQUIREMENT) return state;
+    return runPrestige(state, getProjectedParadoxGain(state.totalChrononsEarned));
   }
 
   if (action.type === 'IMPORT_STATE') {
