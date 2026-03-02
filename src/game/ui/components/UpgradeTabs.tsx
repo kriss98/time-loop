@@ -1,8 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
+import { formatNumber } from '@/src/game/economy/format';
 import { WorkerAction } from '@/src/game/sim/messages';
 import { useGameStore } from '@/src/game/store/useGameStore';
 
@@ -11,26 +13,37 @@ export const UpgradeTabs = ({ dispatch }: { dispatch: (a: WorkerAction) => void 
   const { state } = useGameStore();
 
   return (
-    <div className="rounded-lg bg-panel p-4">
+    <section className="game-panel mt-3 p-4">
       <div className="mb-3 flex gap-2">
-        <button className={`rounded px-3 py-1 ${tab === 'upgrades' ? 'bg-sky-600' : 'bg-slate-700'}`} onClick={() => setTab('upgrades')}>Upgrades</button>
-        <button className={`rounded px-3 py-1 ${tab === 'paradox' ? 'bg-sky-600' : 'bg-slate-700'}`} onClick={() => setTab('paradox')}>Paradox Shop</button>
+        <button className={`game-chip ${tab === 'upgrades' ? 'active' : ''}`} onClick={() => setTab('upgrades')}>
+          Upgrades
+        </button>
+        <button className={`game-chip ${tab === 'paradox' ? 'active' : ''}`} onClick={() => setTab('paradox')}>
+          Paradox Shop
+        </button>
       </div>
 
       {tab === 'upgrades' && (
         <div className="space-y-2">
-          {UPGRADES.map((upgrade) => (
-            <button
-              key={upgrade.id}
-              className="w-full rounded border border-slate-800 p-2 text-left"
-              disabled={state.purchasedUpgrades.includes(upgrade.id)}
-              onClick={() => dispatch({ type: 'BUY_UPGRADE', payload: { id: upgrade.id } })}
-            >
-              <div className="font-semibold">{upgrade.name}</div>
-              <div className="text-xs text-slate-300">{upgrade.description}</div>
-              <div className="text-xs">Cost: {upgrade.cost} {upgrade.currency}</div>
-            </button>
-          ))}
+          {UPGRADES.map((upgrade) => {
+            const purchased = state.purchasedUpgrades.includes(upgrade.id);
+            const affordable = state[upgrade.currency] >= upgrade.cost;
+            return (
+              <button
+                key={upgrade.id}
+                className={`store-row w-full text-left ${affordable && !purchased ? 'affordable' : 'locked'}`}
+                disabled={purchased}
+                onClick={() => dispatch({ type: 'BUY_UPGRADE', payload: { id: upgrade.id } })}
+              >
+                <Image src={upgrade.iconPath ?? '/assets/time-loop/upgrade_reinforced_seconds.png'} alt="" width={40} height={40} className="store-icon" />
+                <div>
+                  <div className="font-semibold">{upgrade.name}</div>
+                  <div className="text-xs text-slate-300">{upgrade.description}</div>
+                  <div className="text-xs">Cost: {formatNumber(upgrade.cost, state.compactNumbers)} {upgrade.currency}</div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
       {tab === 'paradox' && (
@@ -38,17 +51,22 @@ export const UpgradeTabs = ({ dispatch }: { dispatch: (a: WorkerAction) => void 
           {PARADOX_UPGRADES.map((upgrade) => (
             <button
               key={upgrade.id}
-              className="w-full rounded border border-slate-800 p-2 text-left"
+              className={`store-row w-full text-left ${
+                state.paradoxPoints >= upgrade.cost && !state.purchasedParadoxUpgrades.includes(upgrade.id) ? 'affordable' : 'locked'
+              }`}
               disabled={state.purchasedParadoxUpgrades.includes(upgrade.id)}
               onClick={() => dispatch({ type: 'BUY_PARADOX_UPGRADE', payload: { id: upgrade.id } })}
             >
-              <div className="font-semibold">{upgrade.name}</div>
-              <div className="text-xs text-slate-300">{upgrade.description}</div>
-              <div className="text-xs">Cost: {upgrade.cost} paradox points</div>
+              <Image src="/assets/time-loop/icon_paradox_core.png" alt="" width={40} height={40} className="store-icon" />
+              <div>
+                <div className="font-semibold">{upgrade.name}</div>
+                <div className="text-xs text-slate-300">{upgrade.description}</div>
+                <div className="text-xs">Cost: {upgrade.cost} paradox points</div>
+              </div>
             </button>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 };

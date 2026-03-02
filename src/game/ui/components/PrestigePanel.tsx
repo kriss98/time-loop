@@ -5,14 +5,20 @@ import { WorkerAction } from '@/src/game/sim/messages';
 
 export const PrestigePanel = ({ dispatch }: { dispatch: (a: WorkerAction) => void }) => {
   const { state, projectedParadoxGain } = useGameStore();
+  const canPrestige = state.totalHours >= 3;
+
   return (
-    <div className="rounded-lg bg-panel p-4">
-      <h2 className="text-lg font-bold">Collapse Timeline</h2>
-      <p className="text-sm text-slate-300">Requires total 3 hours. Current total: {state.totalHours.toFixed(2)}</p>
-      <p className="text-sm">Projected gain: +{projectedParadoxGain} paradox points</p>
-      <button className="mt-3 rounded bg-fuchsia-700 px-3 py-1" onClick={() => dispatch({ type: 'PRESTIGE' })}>
+    <section className="game-panel mt-3 p-4">
+      <h2 className="panel-title">Collapse Timeline</h2>
+      <p className="text-sm text-slate-200">Requires total 3 hours. Current total: {state.totalHours.toFixed(2)}</p>
+      <p className="text-sm text-fuchsia-200">Projected gain: +{projectedParadoxGain} paradox points</p>
+      <button
+        className="game-button mt-3 bg-fuchsia-700/80 px-3 py-1 text-sm disabled:opacity-50"
+        disabled={!canPrestige}
+        onClick={() => dispatch({ type: 'PRESTIGE' })}
+      >
         Collapse Timeline
       </button>
-    </div>
+    </section>
   );
 };

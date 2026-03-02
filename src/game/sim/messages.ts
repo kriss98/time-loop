@@ -7,6 +7,7 @@ export interface GeneratorDef {
   baseCost: number;
   growth: number;
   baseProduction: number;
+  iconPath?: string;
 }
 
 export interface UpgradeDef {
@@ -23,6 +24,7 @@ export interface UpgradeDef {
     | 'autoClick'
     | 'costCompression';
   value: number;
+  iconPath?: string;
 }
 
 export interface ParadoxUpgradeDef {
