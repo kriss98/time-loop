@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { loadState, saveState } from '@/src/game/persistence/saveLoad';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { WorkerAction, WorkerOutboundMessage } from '@/src/game/sim/messages';
-import { soundManager } from '@/src/game/ui/sfx/sound';
+import { audioManager } from '@/src/game/ui/sfx/audioManager';
 
 export const useWorkerBridge = () => {
   const workerRef = useRef<Worker | null>(null);
@@ -32,8 +32,36 @@ export const useWorkerBridge = () => {
   }, [setSnapshot]);
 
   useEffect(() => {
-    soundManager.configure(state.audio.sfxEnabled, state.audio.sfxVolume);
-  }, [state.audio.sfxEnabled, state.audio.sfxVolume]);
+    const unlockOnFirstInteraction = () => {
+      audioManager.unlockAudio();
+      if (state.audio.musicEnabled) {
+        audioManager.startMusic();
+      }
+      window.removeEventListener('pointerdown', unlockOnFirstInteraction);
+      window.removeEventListener('keydown', unlockOnFirstInteraction);
+    };
+
+    window.addEventListener('pointerdown', unlockOnFirstInteraction);
+    window.addEventListener('keydown', unlockOnFirstInteraction);
+
+    return () => {
+      window.removeEventListener('pointerdown', unlockOnFirstInteraction);
+      window.removeEventListener('keydown', unlockOnFirstInteraction);
+    };
+  }, [state.audio.musicEnabled]);
+
+  useEffect(() => {
+    audioManager.setSfxEnabled(state.audio.sfxEnabled);
+    audioManager.setMusicEnabled(state.audio.musicEnabled);
+    audioManager.setSfxVolume(state.audio.sfxVolume);
+    audioManager.setMusicVolume(state.audio.musicVolume);
+
+    if (state.audio.musicEnabled) {
+      audioManager.startMusic();
+    } else {
+      audioManager.stopMusic();
+    }
+  }, [state.audio.musicEnabled, state.audio.musicVolume, state.audio.sfxEnabled, state.audio.sfxVolume]);
 
   useEffect(() => {
     const timer = setInterval(() => {

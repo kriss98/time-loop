@@ -1,14 +1,23 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { PRESTIGE_REQUIREMENT } from '@/src/game/economy/formulas';
 import { formatNumber } from '@/src/game/economy/format';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { WorkerAction } from '@/src/game/sim/messages';
-import { soundManager } from '@/src/game/ui/sfx/sound';
+import { audioManager } from '@/src/game/ui/sfx/audioManager';
 
 export const PrestigePanel = ({ dispatch }: { dispatch: (a: WorkerAction) => void }) => {
   const { state, projectedParadoxGain } = useGameStore();
   const canPrestige = state.totalChrononsEarned >= PRESTIGE_REQUIREMENT;
+  const prevParadoxPoints = useRef(state.paradoxPoints);
+
+  useEffect(() => {
+    if (state.paradoxPoints > prevParadoxPoints.current) {
+      audioManager.playPrestige();
+    }
+    prevParadoxPoints.current = state.paradoxPoints;
+  }, [state.paradoxPoints]);
 
   return (
     <section className="game-panel mt-3 p-4">
@@ -26,7 +35,6 @@ export const PrestigePanel = ({ dispatch }: { dispatch: (a: WorkerAction) => voi
         disabled={!canPrestige}
         onClick={() => {
           dispatch({ type: 'PRESTIGE' });
-          soundManager.play('prestige');
         }}
       >
         Collapse Timeline

@@ -24,7 +24,7 @@ export const createInitialState = (): GameState => ({
   purchasedParadoxUpgrades: [],
   compactNumbers: false,
   buyMode: 1,
-  audio: { sfxEnabled: true, sfxVolume: 65 },
+  audio: { sfxEnabled: true, musicEnabled: false, sfxVolume: 0.7, musicVolume: 0.4 },
   lastTickAt: Date.now(),
   lastSavedAt: Date.now(),
   log: ['Initialized loop architecture'],
