@@ -5,7 +5,7 @@ import { MouseEvent, useState } from 'react';
 import { PRIMARY_CURRENCY_LABEL, formatNumber, formatRate } from '@/src/game/economy/format';
 import { WorkerAction } from '@/src/game/sim/messages';
 import { useGameStore } from '@/src/game/store/useGameStore';
-import { soundManager } from '@/src/game/ui/sfx/sound';
+import { audioManager } from '@/src/game/ui/sfx/audioManager';
 
 type Floater = { id: number; x: number; y: number; text: string };
 
@@ -23,8 +23,8 @@ export const TimeCore = ({ dispatch }: { dispatch: (action: WorkerAction) => voi
       text: `+1 ${PRIMARY_CURRENCY_LABEL}`,
     };
 
-    soundManager.unlock();
-    soundManager.play('click');
+    audioManager.unlockAudio();
+    audioManager.playClick();
     dispatch({ type: 'CLICK' });
     setClickFrame((f) => f + 1);
     setFloaters((existing) => [...existing, floater]);

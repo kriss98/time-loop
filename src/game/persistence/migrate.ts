@@ -1,6 +1,13 @@
 import { createInitialState, STATE_VERSION } from '@/src/game/sim/reducer';
 import { PersistedSave } from '@/src/game/sim/messages';
 
+type LegacyAudio = {
+  sfxEnabled?: boolean;
+  musicEnabled?: boolean;
+  sfxVolume?: number;
+  musicVolume?: number;
+};
+
 type LegacyState = {
   version?: number;
   seconds?: number;
@@ -9,7 +16,7 @@ type LegacyState = {
   totalHours?: number;
   totalChrononsEarned?: number;
   chronons?: number;
-  audio?: { sfxEnabled?: boolean; sfxVolume?: number };
+  audio?: LegacyAudio;
 } & Record<string, unknown>;
 
 const toChronons = (state: LegacyState): number => {
@@ -18,6 +25,12 @@ const toChronons = (state: LegacyState): number => {
   const minutes = typeof state.minutes === 'number' ? state.minutes : 0;
   const hours = typeof state.hours === 'number' ? state.hours : 0;
   return seconds + minutes * 60 + hours * 3600;
+};
+
+const normalizeVolume = (value: unknown, fallback: number): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  if (value > 1) return Math.min(1, Math.max(0, value / 100));
+  return Math.min(1, Math.max(0, value));
 };
 
 export const migrateSave = (save: PersistedSave): PersistedSave => {
@@ -43,7 +56,9 @@ export const migrateSave = (save: PersistedSave): PersistedSave => {
       totalChrononsEarned,
       audio: {
         sfxEnabled: legacy.audio?.sfxEnabled ?? base.audio.sfxEnabled,
-        sfxVolume: legacy.audio?.sfxVolume ?? base.audio.sfxVolume,
+        musicEnabled: legacy.audio?.musicEnabled ?? base.audio.musicEnabled,
+        sfxVolume: normalizeVolume(legacy.audio?.sfxVolume, base.audio.sfxVolume),
+        musicVolume: normalizeVolume(legacy.audio?.musicVolume, base.audio.musicVolume),
       },
     },
   };

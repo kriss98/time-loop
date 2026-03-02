@@ -3,7 +3,9 @@ export type BuyAmountMode = 1 | 10 | 'max';
 
 export interface AudioSettings {
   sfxEnabled: boolean;
+  musicEnabled: boolean;
   sfxVolume: number;
+  musicVolume: number;
 }
 
 export interface GeneratorDef {

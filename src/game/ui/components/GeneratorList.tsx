@@ -7,7 +7,7 @@ import { PRIMARY_CURRENCY_LABEL, formatNumber } from '@/src/game/economy/format'
 import { getCostCompression, getTotalCost } from '@/src/game/economy/formulas';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { BuyAmountMode, WorkerAction } from '@/src/game/sim/messages';
-import { soundManager } from '@/src/game/ui/sfx/sound';
+import { audioManager } from '@/src/game/ui/sfx/audioManager';
 
 const modes: BuyAmountMode[] = [1, 10, 'max'];
 
@@ -20,7 +20,7 @@ export const GeneratorList = ({ dispatch }: { dispatch: (a: WorkerAction) => voi
     for (const generator of GENERATORS) {
       if ((state.generators[generator.id] ?? 0) > (prevOwned.current[generator.id] ?? 0)) {
         setPoppedId(generator.id);
-        soundManager.play('buy');
+        audioManager.playBuy();
         window.setTimeout(() => setPoppedId((current) => (current === generator.id ? null : current)), 200);
       }
     }
