@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  PRESTIGE_REQUIREMENT,
   calculateAffordableAmount,
+  getChrononsPerSecond,
   getProjectedParadoxGain,
-  getSecondsPerSecond,
   getTotalCost,
-} from '@/src/game/economy/formulas';
-import { createInitialState } from '@/src/game/sim/reducer';
+} from './formulas';
+import { createInitialState } from '../sim/reducer';
 
 describe('economy formulas', () => {
   it('computes geometric purchase cost', () => {
@@ -23,12 +24,12 @@ describe('economy formulas', () => {
     const state = createInitialState();
     state.generators.chronoShard = 10;
     state.purchasedUpgrades.push('temporal-efficiency');
-    const rate = getSecondsPerSecond(state);
+    const rate = getChrononsPerSecond(state);
     expect(rate).toBeGreaterThan(1);
   });
 
   it('calculates paradox gain curve', () => {
-    expect(getProjectedParadoxGain(3)).toBe(2);
-    expect(getProjectedParadoxGain(100)).toBe(25);
+    expect(getProjectedParadoxGain(PRESTIGE_REQUIREMENT - 1)).toBe(0);
+    expect(getProjectedParadoxGain(PRESTIGE_REQUIREMENT)).toBe(1);
   });
 });

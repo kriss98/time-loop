@@ -1,5 +1,7 @@
 const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi'];
 
+export const PRIMARY_CURRENCY_LABEL = 'Chronons';
+
 export const formatNumber = (value: number, compact: boolean): string => {
   if (!Number.isFinite(value)) return '∞';
   if (!compact) return Math.floor(value).toLocaleString();
