@@ -17,14 +17,33 @@ export interface GeneratorDef {
   iconPath?: string;
 }
 
+export type UpgradeCategory = 'generator' | 'synergy' | 'global' | 'automation';
+
+export interface UpgradeUnlockCondition {
+  totalChrononsEarned?: number;
+  generatorsOwned?: Record<string, number>;
+}
+
 export interface UpgradeDef {
   id: string;
   name: string;
   description: string;
+  effectLine: string;
   cost: number;
   currency: CurrencyId;
-  type: 'globalMultiplier' | 'generatorMultiplier' | 'autoClick' | 'costCompression';
+  category: UpgradeCategory;
+  type:
+    | 'globalMultiplier'
+    | 'generatorMultiplier'
+    | 'generatorTierMultiplier'
+    | 'generatorSynergy'
+    | 'clickMultiplier'
+    | 'autoClick'
+    | 'costCompression';
   value: number;
+  generatorId?: string;
+  sourceGeneratorId?: string;
+  unlock?: UpgradeUnlockCondition;
   iconPath?: string;
 }
 

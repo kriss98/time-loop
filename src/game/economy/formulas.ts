@@ -1,10 +1,10 @@
 import { GENERATORS } from '@/src/game/content/generators';
 import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
-import { BuyAmountMode, GameState } from '@/src/game/sim/messages';
+import { BuyAmountMode, GameState, UpgradeDef } from '@/src/game/sim/messages';
 
 export const CLICK_BASE = 1;
-export const PRESTIGE_REQUIREMENT = 250_000;
+export const PRESTIGE_REQUIREMENT = 2_500_000;
 
 export const getTotalCost = (baseCost: number, growth: number, owned: number, amount: number): number => {
   if (amount <= 0) return 0;
@@ -47,6 +47,38 @@ export const resolveBuyAmount = (
   return mode;
 };
 
+export const isUpgradeUnlocked = (state: GameState, upgrade: UpgradeDef): boolean => {
+  if (!upgrade.unlock) return true;
+  if (upgrade.unlock.totalChrononsEarned && state.totalChrononsEarned < upgrade.unlock.totalChrononsEarned) {
+    return false;
+  }
+
+  if (upgrade.unlock.generatorsOwned) {
+    return Object.entries(upgrade.unlock.generatorsOwned).every(
+      ([generatorId, required]) => (state.generators[generatorId] ?? 0) >= required,
+    );
+  }
+
+  return true;
+};
+
+export const describeUpgradeUnlock = (upgrade: UpgradeDef): string => {
+  if (!upgrade.unlock) return 'Available now';
+
+  const conditions: string[] = [];
+  if (upgrade.unlock.totalChrononsEarned) {
+    conditions.push(`Earn ${upgrade.unlock.totalChrononsEarned.toLocaleString()} total Chronons`);
+  }
+  if (upgrade.unlock.generatorsOwned) {
+    Object.entries(upgrade.unlock.generatorsOwned).forEach(([generatorId, required]) => {
+      const generator = GENERATORS.find((g) => g.id === generatorId);
+      conditions.push(`Own ${required} ${generator?.name ?? generatorId}`);
+    });
+  }
+
+  return conditions.join(' • ');
+};
+
 export const getCostCompression = (state: GameState): number => {
   const regular = UPGRADES.filter(
     (u) => u.type === 'costCompression' && state.purchasedUpgrades.includes(u.id),
@@ -78,6 +110,28 @@ export const getGeneratorMultiplier = (state: GameState): number =>
     1,
   );
 
+const getGeneratorTierMultiplier = (state: GameState, generatorId: string): number =>
+  UPGRADES.filter(
+    (u) => u.type === 'generatorTierMultiplier' && u.generatorId === generatorId && state.purchasedUpgrades.includes(u.id),
+  ).reduce((acc, u) => acc * u.value, 1);
+
+const getGeneratorSynergyMultiplier = (state: GameState, generatorId: string): number =>
+  UPGRADES.filter(
+    (u) => u.type === 'generatorSynergy' && u.generatorId === generatorId && state.purchasedUpgrades.includes(u.id),
+  ).reduce((acc, u) => {
+    const sourceId = u.sourceGeneratorId;
+    if (!sourceId) return acc;
+    const sourceOwned = state.generators[sourceId] ?? 0;
+    return acc * (1 + sourceOwned * u.value);
+  }, 1);
+
+export const getClickPower = (state: GameState): number =>
+  CLICK_BASE *
+  UPGRADES.filter((u) => u.type === 'clickMultiplier' && state.purchasedUpgrades.includes(u.id)).reduce(
+    (acc, u) => acc * u.value,
+    1,
+  );
+
 export const getAutoClicksPerSecond = (state: GameState): number => {
   const regular = UPGRADES.filter(
     (u) => u.type === 'autoClick' && state.purchasedUpgrades.includes(u.id),
@@ -89,14 +143,18 @@ export const getAutoClicksPerSecond = (state: GameState): number => {
 };
 
 export const getChrononsPerSecond = (state: GameState): number => {
-  const generatorMult = getGeneratorMultiplier(state);
+  const baseGeneratorMult = getGeneratorMultiplier(state);
   const globalMult = getGlobalMultiplier(state);
+
   const generated = GENERATORS.reduce((acc, generator) => {
     const owned = state.generators[generator.id] ?? 0;
-    return acc + owned * generator.baseProduction;
+    const multiplier =
+      baseGeneratorMult * getGeneratorTierMultiplier(state, generator.id) * getGeneratorSynergyMultiplier(state, generator.id);
+    return acc + owned * generator.baseProduction * multiplier;
   }, 0);
 
-  return (generated + getAutoClicksPerSecond(state) * CLICK_BASE) * generatorMult * globalMult;
+  const autoClickContribution = getAutoClicksPerSecond(state) * getClickPower(state);
+  return (generated + autoClickContribution) * globalMult;
 };
 
 export const getProjectedParadoxGain = (totalChrononsEarned: number): number => {
