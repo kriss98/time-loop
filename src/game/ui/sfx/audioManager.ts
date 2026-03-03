@@ -4,13 +4,16 @@ type SfxKey = 'click' | 'buy' | 'prestige';
 
 type AudioListener = () => void;
 
+/** SFX files live at public/assets/time-loop/sfx */
+const SFX_BASE = '/assets/time-loop/sfx';
+
 const SFX_PATHS: Record<SfxKey, string> = {
-  click: '/assets/sfx/click.mp3',
-  buy: '/assets/sfx/buy.mp3',
-  prestige: '/assets/sfx/prestige.mp3',
+  click: `${SFX_BASE}/click.ogg`,
+  buy: `${SFX_BASE}/buy.ogg`,
+  prestige: `${SFX_BASE}/prestige.ogg`,
 };
 
-const MUSIC_PATH = '/assets/sfx/background.mp3';
+const MUSIC_PATH = `${SFX_BASE}/background.mp3`;
 const MAX_SIMULTANEOUS_SFX = 6;
 const CLICK_THROTTLE_MS = 40;
 
