@@ -1,21 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
-import { describeUpgradeUnlock, isUpgradeUnlocked } from '@/src/game/economy/formulas';
+import { getVisibleUpgrades } from '@/src/game/economy/formulas';
 import { PRIMARY_CURRENCY_LABEL, formatNumber } from '@/src/game/economy/format';
-import { UpgradeCategory, WorkerAction } from '@/src/game/sim/messages';
+import { WorkerAction } from '@/src/game/sim/messages';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { audioManager } from '@/src/game/ui/sfx/audioManager';
-
-const categoryMeta: Array<{ category: UpgradeCategory; title: string }> = [
-  { category: 'generator', title: 'Generator Upgrades' },
-  { category: 'synergy', title: 'Synergies' },
-  { category: 'global', title: 'Global' },
-  { category: 'automation', title: 'Automation' },
-];
 
 export const UpgradeTabs = ({ dispatch }: { dispatch: (a: WorkerAction) => void }) => {
   const [tab, setTab] = useState<'upgrades' | 'paradox'>('upgrades');
@@ -37,6 +30,8 @@ export const UpgradeTabs = ({ dispatch }: { dispatch: (a: WorkerAction) => void 
     prevParadoxUpgradeCount.current = state.purchasedParadoxUpgrades.length;
   }, [state.purchasedParadoxUpgrades.length]);
 
+  const visibleUpgrades = useMemo(() => getVisibleUpgrades(state, UPGRADES), [state]);
+
   return (
     <section className="game-panel mt-3 p-4">
       <div className="mb-3 flex gap-2">
@@ -49,48 +44,44 @@ export const UpgradeTabs = ({ dispatch }: { dispatch: (a: WorkerAction) => void 
       </div>
 
       {tab === 'upgrades' && (
-        <div className="space-y-4">
-          {categoryMeta.map(({ category, title }) => {
-            const categoryUpgrades = UPGRADES.filter((upgrade) => upgrade.category === category);
-            if (categoryUpgrades.length === 0) return null;
+        <div className="space-y-2">
+          {visibleUpgrades.map((upgrade) => {
+            const affordable = state.chronons >= upgrade.cost;
+            const canBuy = affordable;
+            const needed = Math.max(0, upgrade.cost - state.chronons);
 
             return (
-              <div key={category} className="space-y-2">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">{title}</h3>
-                {categoryUpgrades.map((upgrade) => {
-                  const purchased = state.purchasedUpgrades.includes(upgrade.id);
-                  const unlocked = isUpgradeUnlocked(state, upgrade);
-                  const affordable = state.chronons >= upgrade.cost;
-                  const canBuy = !purchased && unlocked && affordable;
-
-                  return (
-                    <button
-                      key={upgrade.id}
-                      className={`store-row w-full text-left ${canBuy ? 'affordable' : 'locked'}`}
-                      disabled={purchased || !unlocked}
-                      onClick={() => {
-                        dispatch({ type: 'BUY_UPGRADE', payload: { id: upgrade.id } });
-                      }}
-                    >
-                      <Image
-                        src={upgrade.iconPath ?? '/assets/time-loop/upgrade_reinforced_seconds.png'}
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="store-icon"
-                      />
-                      <div>
-                        <div className="font-semibold">{upgrade.name}</div>
-                        <div className="text-xs text-cyan-200">{upgrade.effectLine}</div>
-                        <div className="text-xs">Cost: {formatNumber(upgrade.cost, state.compactNumbers)} {PRIMARY_CURRENCY_LABEL}</div>
-                        {!unlocked && <div className="text-xs text-slate-300">Unlock: {describeUpgradeUnlock(upgrade)}</div>}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              <button
+                key={upgrade.id}
+                className={`store-row w-full text-left ${canBuy ? 'affordable' : 'locked'}`}
+                disabled={!affordable}
+                onClick={() => {
+                  dispatch({ type: 'BUY_UPGRADE', payload: { id: upgrade.id } });
+                }}
+              >
+                <Image
+                  src={upgrade.iconPath ?? '/assets/time-loop/upgrade_reinforced_seconds.png'}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="store-icon"
+                />
+                <div>
+                  <div className="font-semibold">{upgrade.name}</div>
+                  <div className="text-xs text-cyan-200">{upgrade.effectLine}</div>
+                  <div className="text-xs">
+                    Cost: {formatNumber(upgrade.cost, state.compactNumbers)} {PRIMARY_CURRENCY_LABEL}
+                  </div>
+                  {!affordable && (
+                    <div className="text-xs text-slate-300">
+                      Need {formatNumber(needed, state.compactNumbers)} more {PRIMARY_CURRENCY_LABEL}
+                    </div>
+                  )}
+                </div>
+              </button>
             );
           })}
+          {visibleUpgrades.length === 0 && <div className="text-sm text-slate-300">No unlocked upgrades available yet.</div>}
         </div>
       )}
       {tab === 'paradox' && (

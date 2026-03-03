@@ -34,6 +34,13 @@ const normalizeVolume = (value: unknown, fallback: number): number => {
   return Math.min(1, Math.max(0, value));
 };
 
+const toClickPower = (state: LegacyState, fallback: number): number => {
+  if (typeof state.clickPower === 'number' && Number.isFinite(state.clickPower) && state.clickPower > 0) {
+    return state.clickPower;
+  }
+  return fallback;
+};
+
 export const migrateSave = (save: PersistedSave): PersistedSave => {
   const base = createInitialState();
   const legacy = save.state as unknown as LegacyState;
@@ -57,6 +64,7 @@ export const migrateSave = (save: PersistedSave): PersistedSave => {
       version: STATE_VERSION,
       chronons,
       totalChrononsEarned,
+      clickPower: toClickPower(legacy, base.clickPower),
       generators: {
         ...base.generators,
         ...((save.state.generators as Record<string, number> | undefined) ?? {}),
