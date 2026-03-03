@@ -3,16 +3,18 @@ import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
 import {
   PRESTIGE_REQUIREMENT,
+  getClickPower,
   getCostCompression,
   getProjectedParadoxGain,
   getTotalCost,
+  isUpgradeUnlocked,
   resolveBuyAmount,
 } from '@/src/game/economy/formulas';
 import { applyTick } from '@/src/game/sim/simCore';
 import { runPrestige } from '@/src/game/sim/prestige';
 import { GameState, WorkerAction } from '@/src/game/sim/messages';
 
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 
 export const createInitialState = (): GameState => ({
   version: STATE_VERSION,
@@ -36,8 +38,9 @@ const pushLog = (state: GameState, msg: string): void => {
 
 export const reduceAction = (state: GameState, action: WorkerAction): GameState => {
   if (action.type === 'CLICK') {
-    state.chronons += 1;
-    state.totalChrononsEarned += 1;
+    const clickValue = getClickPower(state);
+    state.chronons += clickValue;
+    state.totalChrononsEarned += clickValue;
     return state;
   }
 
@@ -76,6 +79,7 @@ export const reduceAction = (state: GameState, action: WorkerAction): GameState 
   if (action.type === 'BUY_UPGRADE') {
     const upgrade = UPGRADES.find((u) => u.id === action.payload.id);
     if (!upgrade || state.purchasedUpgrades.includes(upgrade.id)) return state;
+    if (!isUpgradeUnlocked(state, upgrade)) return state;
     if (state.chronons < upgrade.cost) return state;
     state.chronons -= upgrade.cost;
     state.purchasedUpgrades.push(upgrade.id);

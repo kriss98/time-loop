@@ -1,3 +1,4 @@
+import { UPGRADES } from '@/src/game/content/upgrades';
 import { createInitialState, STATE_VERSION } from '@/src/game/sim/reducer';
 import { PersistedSave } from '@/src/game/sim/messages';
 
@@ -45,6 +46,8 @@ export const migrateSave = (save: PersistedSave): PersistedSave => {
         ? legacy.totalHours * 3600
         : chronons;
 
+  const knownUpgradeIds = new Set(UPGRADES.map((upgrade) => upgrade.id));
+
   return {
     version: STATE_VERSION,
     savedAt: save.savedAt,
@@ -54,6 +57,11 @@ export const migrateSave = (save: PersistedSave): PersistedSave => {
       version: STATE_VERSION,
       chronons,
       totalChrononsEarned,
+      generators: {
+        ...base.generators,
+        ...((save.state.generators as Record<string, number> | undefined) ?? {}),
+      },
+      purchasedUpgrades: ((save.state.purchasedUpgrades as string[] | undefined) ?? []).filter((id) => knownUpgradeIds.has(id)),
       audio: {
         sfxEnabled: legacy.audio?.sfxEnabled ?? base.audio.sfxEnabled,
         musicEnabled: legacy.audio?.musicEnabled ?? base.audio.musicEnabled,
