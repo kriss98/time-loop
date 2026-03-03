@@ -17,7 +17,7 @@ export interface GeneratorDef {
   iconPath?: string;
 }
 
-export type UpgradeCategory = 'generator' | 'synergy' | 'global' | 'automation';
+export type UpgradeCategory = 'generator' | 'synergy' | 'global' | 'automation' | 'click';
 
 export interface UpgradeUnlockCondition {
   totalChrononsEarned?: number;
@@ -37,7 +37,9 @@ export interface UpgradeDef {
     | 'generatorMultiplier'
     | 'generatorTierMultiplier'
     | 'generatorSynergy'
+    | 'clickFlat'
     | 'clickMultiplier'
+    | 'clickSynergy'
     | 'autoClick'
     | 'costCompression';
   value: number;
@@ -61,6 +63,7 @@ export interface GameState {
   chronons: number;
   totalChrononsEarned: number;
   paradoxPoints: number;
+  clickPower: number;
   generators: Record<string, number>;
   purchasedUpgrades: string[];
   purchasedParadoxUpgrades: string[];

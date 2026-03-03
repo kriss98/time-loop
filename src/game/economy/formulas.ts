@@ -3,8 +3,7 @@ import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
 import { BuyAmountMode, GameState, UpgradeDef } from '@/src/game/sim/messages';
 
-export const CLICK_BASE = 1;
-export const PRESTIGE_REQUIREMENT = 2_500_000;
+export const PRESTIGE_REQUIREMENT_BASELINE = 5_000_000;
 
 export const getTotalCost = (baseCost: number, growth: number, owned: number, amount: number): number => {
   if (amount <= 0) return 0;
@@ -60,6 +59,24 @@ export const isUpgradeUnlocked = (state: GameState, upgrade: UpgradeDef): boolea
   }
 
   return true;
+};
+
+export const getVisibleUpgrades = (state: GameState, upgrades: UpgradeDef[]): UpgradeDef[] => {
+  const unlockedUnpurchased = upgrades
+    .filter((upgrade) => !state.purchasedUpgrades.includes(upgrade.id) && isUpgradeUnlocked(state, upgrade))
+    .sort((a, b) => a.cost - b.cost);
+
+  if (unlockedUnpurchased.length <= 4) {
+    return unlockedUnpurchased;
+  }
+
+  const affordable = unlockedUnpurchased.filter((upgrade) => upgrade.cost <= state.chronons);
+
+  if (affordable.length === 0) {
+    return unlockedUnpurchased.slice(0, 4);
+  }
+
+  return affordable.slice(0, 8);
 };
 
 export const describeUpgradeUnlock = (upgrade: UpgradeDef): string => {
@@ -125,12 +142,29 @@ const getGeneratorSynergyMultiplier = (state: GameState, generatorId: string): n
     return acc * (1 + sourceOwned * u.value);
   }, 1);
 
-export const getClickPower = (state: GameState): number =>
-  CLICK_BASE *
-  UPGRADES.filter((u) => u.type === 'clickMultiplier' && state.purchasedUpgrades.includes(u.id)).reduce(
+export const getClickPower = (state: GameState): number => {
+  const flatBonus = UPGRADES.filter((u) => u.type === 'clickFlat' && state.purchasedUpgrades.includes(u.id)).reduce(
+    (acc, u) => acc + u.value,
+    0,
+  );
+
+  const clickMultiplier = UPGRADES.filter((u) => u.type === 'clickMultiplier' && state.purchasedUpgrades.includes(u.id)).reduce(
     (acc, u) => acc * u.value,
     1,
   );
+
+  const clickSynergyMultiplier = UPGRADES.filter((u) => u.type === 'clickSynergy' && state.purchasedUpgrades.includes(u.id)).reduce(
+    (acc, u) => {
+      const sourceId = u.sourceGeneratorId;
+      if (!sourceId) return acc;
+      const sourceOwned = state.generators[sourceId] ?? 0;
+      return acc * (1 + sourceOwned * u.value);
+    },
+    1,
+  );
+
+  return (state.clickPower + flatBonus) * clickMultiplier * clickSynergyMultiplier;
+};
 
 export const getAutoClicksPerSecond = (state: GameState): number => {
   const regular = UPGRADES.filter(
@@ -158,6 +192,6 @@ export const getChrononsPerSecond = (state: GameState): number => {
 };
 
 export const getProjectedParadoxGain = (totalChrononsEarned: number): number => {
-  if (totalChrononsEarned < PRESTIGE_REQUIREMENT) return 0;
-  return Math.floor((totalChrononsEarned / PRESTIGE_REQUIREMENT) ** 0.7);
+  if (totalChrononsEarned < PRESTIGE_REQUIREMENT_BASELINE) return 0;
+  return Math.floor((totalChrononsEarned / PRESTIGE_REQUIREMENT_BASELINE) ** 0.65);
 };

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  PRESTIGE_REQUIREMENT,
+  PRESTIGE_REQUIREMENT_BASELINE,
   calculateAffordableAmount,
   getChrononsPerSecond,
   getProjectedParadoxGain,
   getTotalCost,
+  getVisibleUpgrades,
   isUpgradeUnlocked,
 } from './formulas';
 import { UPGRADES } from '../content/upgrades';
@@ -44,8 +45,34 @@ describe('economy formulas', () => {
     expect(isUpgradeUnlocked(state, tierUpgrade)).toBe(true);
   });
 
+  it('selects only affordable upgrades when affordable exists', () => {
+    const state = createInitialState();
+    state.totalChrononsEarned = 1_000_000;
+    state.generators.chronoShard = 60;
+    state.chronons = 2_000;
+
+    const visible = getVisibleUpgrades(state, UPGRADES);
+    expect(visible.length).toBeGreaterThan(0);
+    expect(visible.length).toBeLessThanOrEqual(8);
+    expect(visible.every((upgrade) => upgrade.cost <= state.chronons)).toBe(true);
+  });
+
+  it('shows four cheapest unlocked upgrades when none are affordable', () => {
+    const state = createInitialState();
+    state.totalChrononsEarned = 1_000_000;
+    state.generators.chronoShard = 60;
+    state.chronons = 0;
+
+    const unlocked = UPGRADES.filter((upgrade) => isUpgradeUnlocked(state, upgrade) && !state.purchasedUpgrades.includes(upgrade.id)).sort(
+      (a, b) => a.cost - b.cost,
+    );
+    const visible = getVisibleUpgrades(state, UPGRADES);
+
+    expect(visible.map((upgrade) => upgrade.id)).toEqual(unlocked.slice(0, 4).map((upgrade) => upgrade.id));
+  });
+
   it('calculates paradox gain curve', () => {
-    expect(getProjectedParadoxGain(PRESTIGE_REQUIREMENT - 1)).toBe(0);
-    expect(getProjectedParadoxGain(PRESTIGE_REQUIREMENT)).toBe(1);
+    expect(getProjectedParadoxGain(PRESTIGE_REQUIREMENT_BASELINE - 1)).toBe(0);
+    expect(getProjectedParadoxGain(PRESTIGE_REQUIREMENT_BASELINE)).toBe(1);
   });
 });

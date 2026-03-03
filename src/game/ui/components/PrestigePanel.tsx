@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { PRESTIGE_REQUIREMENT } from '@/src/game/economy/formulas';
+import { PRESTIGE_REQUIREMENT_BASELINE } from '@/src/game/economy/formulas';
 import { formatNumber } from '@/src/game/economy/format';
 import { useGameStore } from '@/src/game/store/useGameStore';
 import { WorkerAction } from '@/src/game/sim/messages';
@@ -9,7 +9,7 @@ import { audioManager } from '@/src/game/ui/sfx/audioManager';
 
 export const PrestigePanel = ({ dispatch }: { dispatch: (a: WorkerAction) => void }) => {
   const { state, projectedParadoxGain } = useGameStore();
-  const canPrestige = state.totalChrononsEarned >= PRESTIGE_REQUIREMENT;
+  const canPrestige = state.totalChrononsEarned >= PRESTIGE_REQUIREMENT_BASELINE;
   const prevParadoxPoints = useRef(state.paradoxPoints);
 
   useEffect(() => {
@@ -23,11 +23,11 @@ export const PrestigePanel = ({ dispatch }: { dispatch: (a: WorkerAction) => voi
     <section className="game-panel mt-3 p-4">
       <h2 className="panel-title">Collapse Timeline</h2>
       <p className="text-sm text-slate-200">
-        Requires {formatNumber(PRESTIGE_REQUIREMENT, state.compactNumbers)} lifetime Chronons this run.
+        Requires {formatNumber(PRESTIGE_REQUIREMENT_BASELINE, state.compactNumbers)} lifetime Chronons this run.
       </p>
       <p className="text-sm text-slate-300">
         Progress: {formatNumber(state.totalChrononsEarned, state.compactNumbers)} /{' '}
-        {formatNumber(PRESTIGE_REQUIREMENT, state.compactNumbers)}
+        {formatNumber(PRESTIGE_REQUIREMENT_BASELINE, state.compactNumbers)}
       </p>
       <p className="text-sm text-fuchsia-200">Projected gain: +{projectedParadoxGain} Paradox Points</p>
       <button

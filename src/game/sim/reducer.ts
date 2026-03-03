@@ -2,7 +2,7 @@ import { GENERATORS } from '@/src/game/content/generators';
 import { PARADOX_UPGRADES } from '@/src/game/content/paradoxUpgrades';
 import { UPGRADES } from '@/src/game/content/upgrades';
 import {
-  PRESTIGE_REQUIREMENT,
+  PRESTIGE_REQUIREMENT_BASELINE,
   getClickPower,
   getCostCompression,
   getProjectedParadoxGain,
@@ -14,13 +14,14 @@ import { applyTick } from '@/src/game/sim/simCore';
 import { runPrestige } from '@/src/game/sim/prestige';
 import { GameState, WorkerAction } from '@/src/game/sim/messages';
 
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export const createInitialState = (): GameState => ({
   version: STATE_VERSION,
   chronons: 0,
   totalChrononsEarned: 0,
   paradoxPoints: 0,
+  clickPower: 1,
   generators: Object.fromEntries(GENERATORS.map((g) => [g.id, 0])),
   purchasedUpgrades: [],
   purchasedParadoxUpgrades: [],
@@ -98,7 +99,7 @@ export const reduceAction = (state: GameState, action: WorkerAction): GameState 
   }
 
   if (action.type === 'PRESTIGE') {
-    if (state.totalChrononsEarned < PRESTIGE_REQUIREMENT) return state;
+    if (state.totalChrononsEarned < PRESTIGE_REQUIREMENT_BASELINE) return state;
     return runPrestige(state, getProjectedParadoxGain(state.totalChrononsEarned));
   }
 
